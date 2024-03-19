@@ -42,7 +42,7 @@ def insert_concatenation(expression): #Función insert_concatenation para poder 
                 if lookahead not in operators and lookahead != '.' and not (
                         isinstance(lookahead, str) and isinstance(token, str)):
                     result.append('.')
-            elif isinstance(token, int) and lookahead == '(':
+            elif isinstance(token, str) and lookahead == '(':
                 result.append('.')
             elif isinstance(token, str) and isinstance(lookahead, str):
                 result.append('.')
@@ -72,7 +72,6 @@ def shunting_yard(expression): #Función para realizar el algoritmo shunting yar
     operator_stack = []
 
     expression = insert_concatenation(expression)
-
     for token in expression:
         if token.isalnum() or token == '#':
             output_queue.append(token)
@@ -252,7 +251,10 @@ def leer_archivo_yalex():
                 if token.count("'") == 2:
                     if "[" not in token:
                         token = token[1:-1]
-                        tokensArray.append(token)
+                        if token.isalnum():
+                            tokensArray.append(ord(token))
+                        else:
+                            tokensArray.append(token)
                         print("TokenArray 1 ", str(tokensArray))
                         token = ""
                 if char in ("(", ")", ".", "|", "*", "?", "+"):
@@ -376,6 +378,8 @@ class Node:
 def build_syntax_tree(regex):
     regex_postfix = shunting_yard(regex)  # Convertir la expresión regular a formato postfix con '#' al final
     print("Esto es mi expresión en postfix: ", regex_postfix)
+    regex_characters = [char if char in ['+', '|', '#', '.', '*', '?'] else chr(int(char)) for char in regex_postfix]
+    print("Y estas son las expresiones sin formato ASCII: ", regex_characters)
     stack = []
     nodes_calculated = set()  # Conjunto para rastrear qué nodos ya han sido calculados
     leaf_calculated = set()
@@ -601,10 +605,14 @@ def followpos(node):
     elif node.value == '?':
         pass  # No se necesita hacer nada para operador opcional
 
-def build_dfa(follow_pos,root,leaf_calculated):
+def build_dfa(follow_pos,root,leaf_calculated,expression):
     # Obtener el estado inicial del AFD
     start_state = tuple(firstpos(root))
     state_counter = 0
+
+    # Obtener el alfabeto de la expresión regular
+    alphabet = set([c for c in expression if c not in ['+', '|', '*', '?', '.', '(', ')']])
+    print("Este es el alfabeto.", alphabet)
 
     # Inicializar un grafo dirigido para representar el AFD
     dfaDirect = nx.DiGraph()
@@ -620,7 +628,7 @@ def build_dfa(follow_pos,root,leaf_calculated):
         current_dfa_direct_state = unmarked_states.pop()
 
         # Para cada símbolo del alfabeto
-        for symbol in get_alphabet(afn):
+        for symbol in alphabet:
             # Calcular los estados a los que se llega desde el estado actual del AFD utilizando el símbolo
             target_states = set()
             for node in leaf_calculated:
@@ -632,12 +640,10 @@ def build_dfa(follow_pos,root,leaf_calculated):
             target_states = [state for state in target_states if state]
             
             target_states_list = list(target_states)
-            print("\n Esta es la lista", target_states_list)
             while () in target_states_list:
                 target_states_list.remove(())
             
             target_states_complete = tuple(target_states_list)
-            print("\n Esta es la nueva tupla ", target_states_complete)
 
             # Convertir los estados obtenidos en una tupla ordenada
             if target_states_complete:
@@ -653,7 +659,10 @@ def build_dfa(follow_pos,root,leaf_calculated):
 
                     # Agregar una transición desde el estado actual del AFD al estado obtenido con el símbolo actual
                     dfaDirect.add_edge(current_dfa_direct_state, dfa_direct_target_state, label=symbol)
-
+    
+    # Agregar los labels al estado inicial del AFD
+    start_node = dfaDirect.nodes[start_state]
+    start_node['label'] = expression
     # Establecer el estado inicial del AFD
     dfaDirect.graph['start'] = start_state
     # Obtener los estados de aceptación del AFD
@@ -663,6 +672,104 @@ def build_dfa(follow_pos,root,leaf_calculated):
 
     # Retornar el AFD construido
     return dfaDirect
+
+def compute_epsilon_closure(dfaDirect, state):
+    #Inicializar conjunto de cierre épsilon y pila con el estado inicial
+    epsilon_closure = set()
+    stack = [state]
+
+    #Recorrer el grafo del AFD por construcción directa
+    while stack:
+        #Sacar un estado de la pila
+        current_state = stack.pop()
+        #Agregarlo al cierre épsilon
+        epsilon_closure.add(current_state)
+
+        #Recorrer los sucesores del estado actual
+        for successor, edge_data in dfaDirect.adj[current_state].items():
+            label = edge_data.get('label', None)
+            #Si la etiqueta es épsilon y el sucesor no está en el cierre épsilon, agregarlo a la pila
+            if label == 'ε' and successor not in epsilon_closure:
+                stack.append(successor)
+    #Retornar el cierre épsilon
+    return epsilon_closure
+
+def move(dfaDirect, state, symbol):
+    #Inicializar conjunto de estados destino
+    target_states = set()
+    
+    #Recorrer los sucesores del estado actual
+    for successor, edge_data in dfaDirect.adj[state].items():
+        label = edge_data.get('label', None)
+        #Si la etiqueta coincide con el símbolo, agregar el sucesor al conjunto de estados destino
+        if label == symbol:
+            target_states.add(successor)
+    #Retornar los estados destino
+    return target_states
+
+def get_alphabet(dfaDirect):
+    #Inicializar conjunto de símbolos del alfabeto
+    alphabet = set()
+    
+    #Recorrer todas las aristas del grafo del AFD por construcción directa
+    for _, _, label in dfaDirect.edges(data='label'):
+        #Si la etiqueta no es épsilon, agregarla al alfabeto
+        if label != 'ε':
+            alphabet.add(label)
+    #Retornar el alfabeto
+    return alphabet
+
+def epsilon_closure(dfaDirect, states):
+    #Inicializar cierre épsilon con los estados dados y una pila
+    closure = set(states)
+    stack = list(states)
+    
+    #Recorrer la pila
+    while stack:
+        state = stack.pop()
+        #Recorrer los sucesores del estado actual
+        for successor, attributes in dfaDirect[state].items():
+            label = attributes['label']
+            #Si la etiqueta es épsilon y el sucesor no está en el cierre épsilon, agregarlo al cierre y a la pila
+            if label == 'ε' and successor not in closure:
+                closure.add(successor)
+                stack.append(successor)
+            #Si la etiqueta es '*', agregar el sucesor al cierre y expandir su cierre épsilon
+            elif label == '*':
+                closure.add(successor)
+                for epsilon_successor in epsilon_closure(afdDirect, {successor}):
+                    if epsilon_successor not in closure:
+                        closure.add(epsilon_successor)
+                        stack.append(epsilon_successor)
+    #Retornar el cierre épsilon
+    return closure
+
+def check_membership(dfaDirect, s):
+    #Inicializar estados actuales con el cierre épsilon del estado inicial
+    current_states = epsilon_closure(dfaDirect, {dfaDirect.graph['start']})
+    
+    #Recorrer los símbolos de la cadena de entrada
+    for element in s:
+        next_states = set()
+        #Recorrer los estados actuales
+        for state in current_states:
+            #Recorrer los sucesores del estado actual
+            for successor, attributes in dfaDirect[state].items():
+                print("Mmm: ",attributes['label'])
+                if chr(int(attributes['label'])) == element:
+                    #Si la etiqueta coincide con el símbolo, agregar el cierre épsilon del sucesor a los estados siguientes
+                    next_states |= epsilon_closure(dfaDirect, {successor})
+                    print("Estado actual: ",state)
+                    print("Posibles caminos: ", dfaDirect[state])
+                    print("Lee simbolo: ",element)
+            #Actualizar los estados actuales con los siguientes estados
+            if element != '*':
+                current_states = next_states
+        print("Estado actual: ",state)
+        print("Posibles caminos: ",dfaDirect[state])
+        print("Lee simbolo: ",element)
+    #Verificar si algún estado actual es un estado de aceptación
+    return any(state in dfaDirect.graph['accept'] for state in current_states)
 
 def encontrar_nodo_posicion_mas_grande(raiz):
     if raiz is None:
@@ -758,7 +865,7 @@ def hopcroft_minimization_dfa_direct(dfa_direct):
     return min_dfa_direct
 
 if __name__ == "__main__":
-    try:
+    #try:
         regexList = leer_archivo_yalex()
 
         print("Nuestra expresión regular es la siguiente: ", regexList)
@@ -771,6 +878,8 @@ if __name__ == "__main__":
             regex += str(element)
         
         print("Y esta es nuestra expresión regular: ", regex)
+
+        w = input("Ingrese una cadena: ")
         
         # Construcción directa (AFD).
         
@@ -793,6 +902,51 @@ if __name__ == "__main__":
         print("\nFollowpos:")
         for num, conjunto in follow_pos.items():
             print(f"Posición: {num} : {conjunto}")
-    except Exception as e:
-        print("Error: ", str(e))
-        sys.exit(1)
+        
+        # Construye el AFD
+        afdDirect = build_dfa(follow_pos,root,leaf_calculated,regexList)
+
+        if ((), ()) in afdDirect.nodes:
+            afdDirect.remove_node(((), ()))
+            # Asegúrate de también eliminar cualquier arista que apunte a este nodo
+            for source, target in list(afdDirect.edges):
+                if target == ((), ()):
+                    afdDirect.remove_edge(source, target)
+
+        filtered_edges = [(source, target, label) for source, target, label in afdDirect.edges(data='label') if source != () and target != ()]
+
+        # Filtrar los nodos que no son tuplas vacías
+        filtered_nodes = [node for node in afdDirect.nodes if node != ()]
+
+        simbolos = set(label for _, _, label in afdDirect.edges(data='label'))
+        # Obtener el conjunto de estados iniciales
+        estados_iniciales = {nodo for nodo in filtered_nodes if len(list(afdDirect.predecessors(nodo))) == 0}
+
+        estados_aceptacion = set()
+        for nodo in filtered_nodes:
+            aceptacion = True
+            for succ in afdDirect.successors(nodo):
+                if succ not in filtered_nodes or succ == ():
+                    aceptacion = False
+                    break
+            if aceptacion:
+                estados_aceptacion.add(nodo)
+
+        # Visualiza el AFD
+        plt.figure(figsize=(10, 10))
+        pos = nx.spring_layout(afdDirect)
+        labels = {edge: label for edge, label in nx.get_edge_attributes(afdDirect, 'label').items()}
+        nx.draw(afdDirect, pos, with_labels=True, node_size=200, node_color='blue')
+        nx.draw_networkx_edge_labels(afdDirect, pos, edge_labels=labels)
+        plt.title("Direct AFD Visualization")
+        plt.axis("off")
+        plt.show()
+
+        result = check_membership(afdDirect, w)
+        if result:
+            print(f"'{w}' pertenece al lenguaje L({regex})")
+        else:
+            print(f"'{w}' no pertenece al lenguaje L({regex})")
+    #except Exception as e:
+        #print("Error: ", str(e))
+        #sys.exit(1)

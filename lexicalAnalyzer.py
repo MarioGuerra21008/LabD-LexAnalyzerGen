@@ -23,7 +23,6 @@ def insert_concatenation(expression): #Función insert_concatenation para poder 
             lookahead = expression[i + 1]
             position = expression[i]
             lookbehind = expression[i - 1]
-
             if char.isalnum() or char == 'ε':
                 if lookahead not in operators and lookahead != '.': #Si el caracter es una letra o un dígito, no está en los operadores y no es unc concatenación:
                     result.append('.') #Agrega una concatenación a la lista result.
@@ -47,32 +46,20 @@ def insert_concatenation(expression): #Función insert_concatenation para poder 
     return ''.join(result) #Devuelve el resultado.
 
 def shunting_yard(expression): #Función para realizar el algoritmo shunting yard.
-     if '+' in expression:
-         new_expression = kleene_closure(expression)
-
-     if '?' in expression:
-         new_expression = question_mark(expression)
      
      precedence = {'#': 1, '|': 1, '.': 2, '*': 3, '+': 3, '?':3} # Orden de precedencia entre operadores.
 
      output_queue = [] #Lista de salida como notación postfix.
      operator_stack = []
      i = 0 #Inicializa contador.
-     
-     if '?' in expression:
-        expression = insert_concatenation(new_expression)
-     elif '+' in expression:
-        expression = insert_concatenation(new_expression)
-     elif '?' in expression and '+' in expression:
-         expression = insert_concatenation(new_expression)
-     else:
-        expression = insert_concatenation(expression) #Llama a la función para que se ejecute.
+
+     expression = insert_concatenation(expression) #Llama a la función para que se ejecute.
 
      while i < len(expression): #Mientras i sea menor que la longitud de la expresión.
          token = expression[i] #El token es igual al elemento en la lista en la posición i.
          if token.isalnum() or token == 'ε': #Si el token es una letra o un dígito, o es epsilon.
              output_queue.append(token) #Se agrega a output_queue.
-         elif token in "|*.#": #Si hay alguno de estos operadores en el token:
+         elif token in "|*.#+?": #Si hay alguno de estos operadores en el token:
              while (operator_stack and operator_stack[-1] != '(' and #Se toma en cuenta la precedencia y el orden de operadores para luego añadirla al queue y a la pila.
                     precedence[token] <= precedence.get(operator_stack[-1], 0)):
                  output_queue.append(operator_stack.pop())
