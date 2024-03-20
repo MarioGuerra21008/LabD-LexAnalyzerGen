@@ -611,7 +611,7 @@ def build_dfa(follow_pos,root,leaf_calculated,expression):
     state_counter = 0
 
     # Obtener el alfabeto de la expresión regular
-    alphabet = set([c for c in expression if c not in ['+', '|', '*', '?', '.', '(', ')']])
+    alphabet = set([str(c) for c in expression if c not in ['+', '|', '*', '?', '.', '(', ')']])
     print("Este es el alfabeto.", alphabet)
 
     # Inicializar un grafo dirigido para representar el AFD
@@ -626,9 +626,10 @@ def build_dfa(follow_pos,root,leaf_calculated,expression):
     while unmarked_states:
         # Tomar un estado no marcado del AFD
         current_dfa_direct_state = unmarked_states.pop()
-
         # Para cada símbolo del alfabeto
         for symbol in alphabet:
+            #if symbol in start_state:
+                #dfaDirect.add_edge(start_state, start_state, label=symbol)
             # Calcular los estados a los que se llega desde el estado actual del AFD utilizando el símbolo
             target_states = set()
             for node in leaf_calculated:
@@ -658,11 +659,14 @@ def build_dfa(follow_pos,root,leaf_calculated,expression):
                         dfaDirect.add_node(dfa_direct_target_state)
 
                     # Agregar una transición desde el estado actual del AFD al estado obtenido con el símbolo actual
-                    dfaDirect.add_edge(current_dfa_direct_state, dfa_direct_target_state, label=symbol)
+                    if dfaDirect.has_edge(current_dfa_direct_state, dfa_direct_target_state):
+                        # Si ya existe una transición hacia el mismo estado, agregar el nuevo símbolo a la etiqueta de la transición
+                        edge_data = dfaDirect.get_edge_data(current_dfa_direct_state, dfa_direct_target_state)
+                        edge_data['label'] += (symbol,)  # Agregar el símbolo como una tupla de un solo elemento
+                    else:
+                        # Si no existe una transición hacia el mismo estado, agregar una nueva transición con el símbolo como tupla
+                        dfaDirect.add_edge(current_dfa_direct_state, dfa_direct_target_state, label=(symbol,))
     
-    # Agregar los labels al estado inicial del AFD
-    start_node = dfaDirect.nodes[start_state]
-    start_node['label'] = expression
     # Establecer el estado inicial del AFD
     dfaDirect.graph['start'] = start_state
     # Obtener los estados de aceptación del AFD
@@ -751,20 +755,19 @@ def check_membership(dfaDirect, s):
     #Recorrer los símbolos de la cadena de entrada
     for element in s:
         next_states = set()
+        i = 0
         #Recorrer los estados actuales
         for state in current_states:
             #Recorrer los sucesores del estado actual
             for successor, attributes in dfaDirect[state].items():
-                print("Mmm: ",attributes['label'])
-                if chr(int(attributes['label'])) == element:
-                    #Si la etiqueta coincide con el símbolo, agregar el cierre épsilon del sucesor a los estados siguientes
-                    next_states |= epsilon_closure(dfaDirect, {successor})
-                    print("Estado actual: ",state)
-                    print("Posibles caminos: ", dfaDirect[state])
-                    print("Lee simbolo: ",element)
-            #Actualizar los estados actuales con los siguientes estados
-            if element != '*':
-                current_states = next_states
+                for label_element in attributes['label']:
+                    if chr(int(label_element)) == element:
+                        #Si la etiqueta coincide con el símbolo, agregar el cierre épsilon del sucesor a los estados siguientes
+                        next_states |= epsilon_closure(dfaDirect, {successor})
+                        print("Estado actual: ",state)
+                        print("Posibles caminos: ", dfaDirect[state])
+                        print("Lee simbolo: ",element)
+            current_states = next_states
         print("Estado actual: ",state)
         print("Posibles caminos: ",dfaDirect[state])
         print("Lee simbolo: ",element)
