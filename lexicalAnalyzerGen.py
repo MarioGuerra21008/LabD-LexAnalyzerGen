@@ -868,7 +868,7 @@ def hopcroft_minimization_dfa_direct(dfa_direct):
     return min_dfa_direct
 
 if __name__ == "__main__":
-    #try:
+    try:
         regexList = leer_archivo_yalex()
 
         print("Nuestra expresión regular es la siguiente: ", regexList)
@@ -945,11 +945,22 @@ if __name__ == "__main__":
         plt.axis("off")
         plt.show()
 
+        # Nombre del archivo de salida
+        nombre_archivo = "AFD1.txt"
+
+        # Crear y escribir en el archivo de texto
+        with open(nombre_archivo, "w") as archivo:
+            archivo.write("ESTADOS = " + str(filtered_nodes) + "\n")
+            archivo.write("SIMBOLOS = " + str(simbolos) + "\n")
+            archivo.write("INICIO = " + str(estados_iniciales) + "\n")
+            archivo.write("ACEPTACION =" + str(estados_aceptacion) + "\n")
+            archivo.write("TRANSICIONES =" + str(filtered_edges))
+
         result = check_membership(afdDirect, w)
         if result:
             print(f"'{w}' pertenece al lenguaje L({regex})")
         else:
             print(f"'{w}' no pertenece al lenguaje L({regex})")
-    #except Exception as e:
-        #print("Error: ", str(e))
-        #sys.exit(1)
+    except Exception as e:
+        print("Error: ", str(e))
+        sys.exit(1)
