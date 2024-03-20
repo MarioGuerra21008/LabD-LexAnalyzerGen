@@ -121,6 +121,7 @@ def leer_archivo_yalex():
     
     yalexFunctions = []
     yalexRegex = []
+    yalexTokens = []
     tokensBool = False
 
     for block in blocks:
@@ -134,9 +135,15 @@ def leer_archivo_yalex():
                 if not line.startswith('(*'):
                     tokens = line.strip().split('{')[0].strip()
                     yalexRegex.extend(tokens.split())
+                    if '{' in line:
+                        returnTokens = line.split('{', 1)[-1].split('}')[0].strip()
+                        if returnTokens:
+                            yalexTokens.append(returnTokens)
     
     yalexRegex2 = []
     yalexFunctions2 = []
+
+    print("Esto es yalexTokens: ", yalexTokens)
 
     for n in yalexRegex:
         if len(n) != 0:
@@ -755,7 +762,6 @@ def check_membership(dfaDirect, s):
     #Recorrer los símbolos de la cadena de entrada
     for element in s:
         next_states = set()
-        i = 0
         #Recorrer los estados actuales
         for state in current_states:
             #Recorrer los sucesores del estado actual
@@ -766,11 +772,11 @@ def check_membership(dfaDirect, s):
                         next_states |= epsilon_closure(dfaDirect, {successor})
                         print("Estado actual: ",state)
                         print("Posibles caminos: ", dfaDirect[state])
-                        print("Lee simbolo: ",element)
+                        if element == "\n" or element == "\t" or element == " ":
+                            print("Lee simbolo: ", ord(element))
+                        else:
+                            print("Lee simbolo: ", element)
             current_states = next_states
-        print("Estado actual: ",state)
-        print("Posibles caminos: ",dfaDirect[state])
-        print("Lee simbolo: ",element)
     #Verificar si algún estado actual es un estado de aceptación
     return any(state in dfaDirect.graph['accept'] for state in current_states)
 
