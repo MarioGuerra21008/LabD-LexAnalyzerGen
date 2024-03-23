@@ -10,6 +10,8 @@ from networkx.drawing.nx_agraph import graphviz_layout
 from collections import deque
 from collections import defaultdict
 from lexicalAnalyzer import *
+import scanFrame as scan
+import Scanner as scanner
 import sys
 
 #Declaración de archivos Yalex proporcionados para el laboratorio.
@@ -127,7 +129,7 @@ def leer_archivo_yalex():
     for block in blocks:
         if block.startswith('let'):
             yalexFunctions.append(block[4:]) # Funciones del Yalex
-            print("Print del let, ", str(yalexFunctions), "\n")
+            #print("Print del let, ", str(yalexFunctions), "\n")
         elif block.startswith("rule"):
             tokensBool == True #Inicia la reglamentación de los tokens.
             lines = block.split("\n")
@@ -139,11 +141,12 @@ def leer_archivo_yalex():
                         returnTokens = line.split('{', 1)[-1].split('}')[0].strip()
                         if returnTokens:
                             yalexTokens.append(returnTokens)
+                    else:
+                            yalexTokens.append(" ")
     
     yalexRegex2 = []
     yalexFunctions2 = []
-
-    print("Esto es yalexTokens: ", yalexTokens)
+    arrayForFunctions = []
 
     for n in yalexRegex:
         if len(n) != 0:
@@ -157,9 +160,17 @@ def leer_archivo_yalex():
                     if yalexRegex2 and yalexRegex2[-1] == "|":
                         raise ValueError("Se encontró un token no definido.")
                 yalexRegex2.append(n)
-            print("Print de YalexRegex2, ", str(yalexRegex2), "\n")
+            #print("Print de YalexRegex2, ", str(yalexRegex2), "\n")
         if yalexRegex2 and yalexRegex2[0] == "|":
             raise ValueError("La expresión no es válida.")
+
+    regexIdentifiers = []
+
+    for identifier in yalexRegex2:
+        if identifier != '|':
+            regexIdentifiers.append(identifier)
+
+    #print("Esto es regexIdentifiers:", regexIdentifiers)
     
     for function in yalexFunctions:
         variable, definition = function.split("=")
@@ -171,7 +182,8 @@ def leer_archivo_yalex():
         arrayForRegex = []
         arrayForDefinition = []
         arrayForRegex.append(variable)
-        print("Identificadores de variables: ", str(arrayForRegex))
+        arrayForFunctions.append(variable)
+        #print("Identificadores de variables: ", str(arrayForRegex))
         elements = ""
 
         if definition[0] == '[':
@@ -187,15 +199,15 @@ def leer_archivo_yalex():
                             else:
                                 elements = bytes(elements, "utf-8").decode("unicode_escape")
                             arrayForDefinition.append(ord(elements))
-                            print("Abr 1 ", str(arrayForDefinition))
+                            #print("Abr 1 ", str(arrayForDefinition))
                         else:
                             if elements == " ":
                                 elements = bytes(" ", "utf-8").decode("unicode_escape")
                                 arrayForDefinition.append(ord(elements))
-                                print("Abr 2 ", str(arrayForDefinition))
+                                #print("Abr 2 ", str(arrayForDefinition))
                             else:
                                 arrayForDefinition.append(ord(elements))
-                                print("Abr 3 ", str(arrayForDefinition))
+                                #print("Abr 3 ", str(arrayForDefinition))
                         elements = ""
                     if elements.count('"') == 2: #Caso donde la variable está delimitada por ""
                         elements = elements[1:-1]
@@ -210,7 +222,7 @@ def leer_archivo_yalex():
                                         escapedCharacter = newElements[:-1]
                                     elements = bytes(escapedCharacter, "utf-8").decode("unicode_escape")
                                     arrayForDefinition.append(ord(elements))
-                                    print("Abr 4 ", str(arrayForDefinition))
+                                    #print("Abr 4 ", str(arrayForDefinition))
                                     newElements = newElements[2:]
                             if len(newElements) != 0:
                                 if newElements == "\s":
@@ -219,7 +231,7 @@ def leer_archivo_yalex():
                                     escapedCharacter = newElements
                                 elements = bytes(escapedCharacter, "utf-8").decode("unicode_escape")
                                 arrayForDefinition.append(ord(elements))
-                                print("Abr 5 ", str(arrayForDefinition))
+                                #print("Abr 5 ", str(arrayForDefinition))
                         else:
                             elements = list(elements)
                             for i in range(len(elements)):
@@ -230,9 +242,9 @@ def leer_archivo_yalex():
                         if elements != ' ':
                             if elements != '\t':
                                 arrayForDefinition.append(elements)
-                    print("Abr 6 ", str(arrayForDefinition))
+                    #print("Abr 6 ", str(arrayForDefinition))
                     elements = ""
-                print("Atributos de las variables como unicode: ", str(arrayForDefinition))
+                #print("Atributos de las variables como unicode: ", str(arrayForDefinition))
         else:
             tokensArray = []
             token = ""
@@ -241,16 +253,16 @@ def leer_archivo_yalex():
                     charArray = []
                     character = ""
                     charArray.append("(")
-                    print("Array de caracteres 1 ", str(charArray))
+                    #print("Array de caracteres 1 ", str(charArray))
                     token = token[1:-1]
                     for element in token:
                         character += element
                         if character.count("'") == 2:
                             character = ord(character[1:-1])
                             charArray.append(character)
-                            print("Array de caracteres 2 ", str(charArray))
+                            #print("Array de caracteres 2 ", str(charArray))
                             charArray.append("|")
-                            print("Array de caracteres 3 pero con el OR ", str(charArray))
+                            #print("Array de caracteres 3 pero con el OR ", str(charArray))
                             character = ""
                     charArray[len(charArray) - 1] = ")"
                     tokensArray.extend(charArray)
@@ -262,7 +274,7 @@ def leer_archivo_yalex():
                             tokensArray.append(ord(token))
                         else:
                             tokensArray.append(token)
-                        print("TokenArray 1 ", str(tokensArray))
+                        #print("TokenArray 1 ", str(tokensArray))
                         token = ""
                 if char in ("(", ")", ".", "|", "*", "?", "+"):
                     if "'" not in token:
@@ -270,20 +282,20 @@ def leer_archivo_yalex():
                             if len(token) == 1:
                                 token = ord(token)
                             tokensArray.append(token)
-                            print("TokenArray 2 ", str(tokensArray))
+                            #print("TokenArray 2 ", str(tokensArray))
                             token = ""
                         if char == '.':
                             tokensArray.append(ord(char))
                         else:
                             tokensArray.append(char)
-                        print("TokenArray 3 ", str(tokensArray))
+                        #print("TokenArray 3 ", str(tokensArray))
                     else:
                         token += char
                 else:
                     token += char
             if token:
                 tokensArray.append(token)
-                print("TokenArray 4 ", str(tokensArray))
+                #print("TokenArray 4 ", str(tokensArray))
             arrayForDefinition.extend(tokensArray)
         arrayForRegex.append(arrayForDefinition)
         yalexFunctions2.append(arrayForRegex)
@@ -358,10 +370,10 @@ def leer_archivo_yalex():
             yalexRegex3.append(element)
 
     yalexRegex2 = yalexRegex3
-    print("Regex de parte de los tokens: ", yalexRegex3)
+    #print("Regex de parte de los tokens: ", yalexRegex3)
 
     yalexRegex4 = getFinalRegex(yalexRegex2, dict(yalexFunctions2))
-    return yalexRegex4
+    return yalexRegex4, regexIdentifiers, yalexTokens
 
 def getFinalRegex(yalexRegex, yalexFunctions):
             yalexRegex4 = []
@@ -385,8 +397,8 @@ class Node:
 def build_syntax_tree(regex):
     regex_postfix = shunting_yard(regex)  # Convertir la expresión regular a formato postfix con '#' al final
     print("Esto es mi expresión en postfix: ", regex_postfix)
-    regex_characters = [char if char in ['+', '|', '#', '.', '*', '?'] else chr(int(char)) for char in regex_postfix]
-    print("Y estas son las expresiones sin formato ASCII: ", regex_characters)
+    #regex_characters = [char if char in ['+', '|', '#', '.', '*', '?'] else chr(int(char)) for char in regex_postfix]
+    #print("Y estas son las expresiones sin formato ASCII: ", regex_characters)
     stack = []
     nodes_calculated = set()  # Conjunto para rastrear qué nodos ya han sido calculados
     leaf_calculated = set()
@@ -656,7 +668,7 @@ def build_dfa(follow_pos,root,leaf_calculated,expression):
             # Convertir los estados obtenidos en una tupla ordenada
             if target_states_complete:
                 dfa_direct_target_state = tuple(sorted(target_states_complete))
-                print("\n Este es para el AFD ", dfa_direct_target_state)
+                #print("\n Este es para el AFD ", dfa_direct_target_state)
 
                 # Evitar agregar la tupla vacía al AFD
                 if dfa_direct_target_state and dfa_direct_target_state != ():
@@ -755,30 +767,69 @@ def epsilon_closure(dfaDirect, states):
     #Retornar el cierre épsilon
     return closure
 
-def check_membership(dfaDirect, s):
-    #Inicializar estados actuales con el cierre épsilon del estado inicial
+def check_membership(dfaDirect, filename):
+    # Inicializar estados actuales con el cierre épsilon del estado inicial
     current_states = epsilon_closure(dfaDirect, {dfaDirect.graph['start']})
+    print("Inicia simulación de entradas: \n")
     
-    #Recorrer los símbolos de la cadena de entrada
-    for element in s:
-        next_states = set()
-        #Recorrer los estados actuales
-        for state in current_states:
-            #Recorrer los sucesores del estado actual
-            for successor, attributes in dfaDirect[state].items():
-                for label_element in attributes['label']:
-                    if chr(int(label_element)) == element:
-                        #Si la etiqueta coincide con el símbolo, agregar el cierre épsilon del sucesor a los estados siguientes
-                        next_states |= epsilon_closure(dfaDirect, {successor})
-                        print("Estado actual: ",state)
-                        print("Posibles caminos: ", dfaDirect[state])
-                        if element == "\n" or element == "\t" or element == " ":
-                            print("Lee simbolo: ", ord(element))
-                        else:
-                            print("Lee simbolo: ", element)
-            current_states = next_states
-    #Verificar si algún estado actual es un estado de aceptación
-    return any(state in dfaDirect.graph['accept'] for state in current_states)
+    # Listas para almacenar las líneas que pertenecen y no pertenecen a la expresión regular
+    pertenece = []
+    no_pertenece = []
+    
+    # Recorrer las líneas del archivo
+    with open(filename, 'r') as file:
+        for line in file:
+            # Restablecer los estados actuales al inicio de cada línea
+            current_states = epsilon_closure(dfaDirect, {dfaDirect.graph['start']})
+            
+            # Variables para determinar si la línea pertenece o no a la expresión regular
+            pertenece_linea = False
+            
+            for element in line:
+                next_states = set()
+                
+                # Recorrer los estados actuales
+                for state in current_states:
+                    # Recorrer los sucesores del estado actual
+                    for successor, attributes in dfaDirect[state].items():
+                        for label_element in attributes['label']:
+                            if chr(int(label_element)) == element:
+                                # Si la etiqueta coincide con el símbolo, agregar el cierre épsilon del sucesor a los estados siguientes
+                                next_states |= epsilon_closure(dfaDirect, {successor})
+                                pertenece_linea = True  # La línea contiene al menos un símbolo válido
+                                print("Estado actual: ", state)
+                                print("Posibles caminos: ", dfaDirect[state])
+                                
+                                if element == "\n" or element == "\t" or element == " ":
+                                    print("Lee símbolo: ", ord(element))
+                                else:
+                                    print("Lee símbolo: ", element)
+                
+                current_states = next_states
+            
+            print("\nInicia siguiente simulación:\n")
+            
+            # Agregar la línea a la lista correspondiente
+            if pertenece_linea:
+                pertenece.append(line)
+            else:
+                no_pertenece.append(line)
+        
+        # Imprimir las líneas que pertenecen a la expresión regular
+        if pertenece:
+            print("Las siguientes líneas pertenecen a la expresión regular definida:")
+            for line in pertenece:
+                print(line)
+        else:
+            print("No se encontraron líneas que pertenezcan a la expresión regular definida.")
+        
+        # Imprimir las líneas que no pertenecen a la expresión regular
+        if no_pertenece:
+            print("\nLas siguientes líneas no pertenecen a la expresión regular definida:")
+            for line in no_pertenece:
+                print(line)
+        else:
+            print("Todas las líneas pertenecen a la expresión regular definida.")
 
 def encontrar_nodo_posicion_mas_grande(raiz):
     if raiz is None:
@@ -814,70 +865,26 @@ def remove_unreachable_states(dfa):
     # Remover estados no alcanzables
     dfa.remove_nodes_from(unreachable_states)
 
-#Algoritmo para minimizar un AFD hecho por construcción directa.
-
-def hopcroft_minimization_dfa_direct(dfa_direct):
-    # Inicializar particiones con estados de aceptación y no de aceptación
-    partitions = [dfa_direct.graph['accept'], list(set(dfa_direct.nodes) - set(dfa_direct.graph['accept']))]
-    # Inicializar una lista de trabajo con la partición de estados de aceptación
-    worklist = deque([dfa_direct.graph['accept']])
-
-    # Proceso de minimización de Hopcroft
-    while worklist:
-        partition = worklist.popleft()
-        for symbol in get_alphabet(dfa_direct):
-            divided_partitions = []
-            for p in partitions:
-                divided = set()
-                for state in p:
-                    # Verificar si hay transiciones con el símbolo actual hacia estados en la partición
-                    successors = set(dfa_direct.successors(state))
-                    if symbol in [dfa_direct.edges[(state, succ)]['label'] for succ in successors]:
-                        divided.add(state)
-                if divided:
-                    divided_partitions.append(divided)
-                    if len(divided) < len(p):
-                        divided_partitions.append(list(set(p) - divided))
-            # Actualizar las particiones si se dividen en particiones más pequeñas
-            if len(divided_partitions) > len(partitions):
-                if partition in partitions:
-                    partitions.remove(partition)
-                partitions.extend(divided_partitions)
-                worklist.extend(divided_partitions)
-    # Crear el DFA minimizado
-    min_dfa_direct = nx.DiGraph()
-    state_mapping = {}
-
-    # Mapear estados a su representación en la partición
-    for i, partition in enumerate(partitions):
-        if partition:
-            min_state = ', '.join(sorted(str(state) for state in partition))
-            state_mapping.update({state: min_state for state in partition})
-
-    # Construir las transiciones del DFA minimizado
-    for source, target, label in dfa_direct.edges(data='label'):
-        min_source = state_mapping[source]
-        min_target = state_mapping[target]
-        min_dfa_direct.add_edge(min_source, min_target, label=label)
-
-    # Establecer el estado inicial y los estados de aceptación del DFA minimizado
-    min_dfa_direct.graph['start'] = state_mapping[dfa_direct.graph['start']]
-    min_dfa_direct.graph['accept'] = [state_mapping[state] for state in dfa_direct.graph['accept'] if state in state_mapping]
-
-    # Remover nodos y aristas no alcanzables del DFA minimizado
-    if '()' in min_dfa_direct.nodes:
-        min_dfa_direct.remove_node('()')
-        for source, target in list(min_dfa_direct.edges):
-            if target == '()':
-                min_dfa_direct.remove_edge(source, target)
-    # Retornar el DFA minimizado
-    return min_dfa_direct
-
 if __name__ == "__main__":
-    try:
-        regexList = leer_archivo_yalex()
+    #try:
+        regexList, regexIdentifiers, regexTokens = leer_archivo_yalex()
 
-        print("Nuestra expresión regular es la siguiente: ", regexList)
+        #print("Nuestra expresión regular es la siguiente: ", regexList, "\n")
+        #print("Estas son los tokens o identificadores de nuestra expresión regular: ", regexIdentifiers, "\n")
+        #print("Estos son los tokens a ejecutar: ", regexTokens, "\n")
+
+        regexTokensFinal = []
+
+        # Iteramos sobre ambas listas simultáneamente
+        for identifier, token in zip(regexIdentifiers, regexTokens):
+            # Si el token es un número entero, lo convertimos a su correspondiente carácter ASCII
+            if identifier.isdigit():
+                identifier = chr(int(identifier))
+            # Añadimos el token y su acción a la lista combinada
+            regexTokensFinal.append(identifier)
+            regexTokensFinal.append(token)
+        
+        print("Estas son las funciones con su código ejecutable: ", regexTokensFinal)
 
         # Inicializamos una cadena vacía para almacenar los elementos
         regex = ''
@@ -887,8 +894,6 @@ if __name__ == "__main__":
             regex += str(element)
         
         print("Y esta es nuestra expresión regular: ", regex)
-
-        w = input("Ingrese una cadena: ")
         
         # Construcción directa (AFD).
         
@@ -900,17 +905,17 @@ if __name__ == "__main__":
 
         follow_pos = {node.num: set() for node in leaf_calculated}
 
-        for num, conjunto in follow_pos.items():
-            print(f"Posición: {num}, Conjunto: {conjunto}")
+        #for num, conjunto in follow_pos.items():
+            #print(f"Posición: {num}, Conjunto: {conjunto}")
 
         # Calcula firstpos, lastpos y followpos
 
         for node in nodes_calculated:
             followpos(node)
 
-        print("\nFollowpos:")
-        for num, conjunto in follow_pos.items():
-            print(f"Posición: {num} : {conjunto}")
+        #print("\nFollowpos:")
+        #for num, conjunto in follow_pos.items():
+            #print(f"Posición: {num} : {conjunto}")
         
         # Construye el AFD
         afdDirect = build_dfa(follow_pos,root,leaf_calculated,regexList)
@@ -953,6 +958,8 @@ if __name__ == "__main__":
 
         # Nombre del archivo de salida
         nombre_archivo = "AFD1.txt"
+        #Nombre del archivo de pruebas
+        testFile = "tests.txt"
 
         # Crear y escribir en el archivo de texto
         with open(nombre_archivo, "w") as archivo:
@@ -962,11 +969,10 @@ if __name__ == "__main__":
             archivo.write("ACEPTACION =" + str(estados_aceptacion) + "\n")
             archivo.write("TRANSICIONES =" + str(filtered_edges))
 
-        result = check_membership(afdDirect, w)
-        if result:
-            print(f"'{w}' pertenece al lenguaje L({regex})")
-        else:
-            print(f"'{w}' no pertenece al lenguaje L({regex})")
-    except Exception as e:
-        print("Error: ", str(e))
-        sys.exit(1)
+        result = check_membership(afdDirect, testFile)
+        
+        scannerFile = scan.createScanner(regexTokensFinal)
+
+    #except Exception as e:
+        #print("Error: ", str(e))
+        #sys.exit(1)
