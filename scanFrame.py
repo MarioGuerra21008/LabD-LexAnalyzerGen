@@ -9,6 +9,7 @@ import sys
 def createScanner(regexTokens):
     i = 0
     with open("Scanner.py", "w") as file:
+        file.write("from Definitions import *\n\n")
         file.write("def scan(tokenYal):\n")
         while i < len(regexTokens):
             token = regexTokens[i]
@@ -17,7 +18,10 @@ def createScanner(regexTokens):
             if code == ' ':  # Verificar si el código consiste únicamente en espacios en blanco
                 file.write("        return tokenYal\n")
             else:
-                file.write(f"       {code}\n")
+                file.write("        try:\n")
+                file.write(f"           {code}\n")
+                file.write("        except NameError:\n")
+                file.write("            print('Valor de retorno no definido.')\n")
             i += 2
         file.write("    return tokenYal\n")
         file.write("\n")

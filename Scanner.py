@@ -1,16 +1,33 @@
+from Definitions import *
+
 def scan(tokenYal):
     if tokenYal == 'ws':
         return tokenYal
     if tokenYal == 'id':
-       return ID
+        try:
+           return ID
+        except NameError:
+            print('Valor de retorno no definido.')
     if tokenYal == '+':
-       return PLUS
+        try:
+           return PLUS
+        except NameError:
+            print('Valor de retorno no definido.')
     if tokenYal == '*':
-       return TIMES
+        try:
+           return TIMES
+        except NameError:
+            print('Valor de retorno no definido.')
     if tokenYal == '(':
-       return LPAREN
+        try:
+           return LPAREN
+        except NameError:
+            print('Valor de retorno no definido.')
     if tokenYal == ')':
-       return RPAREN
+        try:
+           return RPAREN
+        except NameError:
+            print('Valor de retorno no definido.')
     return tokenYal
 
 def outputScanner(scannerList):

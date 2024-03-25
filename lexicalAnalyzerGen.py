@@ -869,8 +869,6 @@ def check_membership(dfaDirect, filename, tokenSymbolList):
                 print(line)
         else:
             print("Todas las líneas pertenecen a la expresión regular definida.")
-        
-        print("Este es inputScanner: ", inputScanner)
     
     return inputScanner
 
@@ -1035,6 +1033,14 @@ if __name__ == "__main__":
         nombre_archivo = "AFD.txt"
         #Nombre del archivo de pruebas
         testFile = "tests.txt"
+
+        try:
+            with open(testFile, "r") as tests:
+                content = tests.read()
+                if not content:
+                    raise ValueError("El archivo tests.txt está vacío.")
+        except FileNotFoundError:
+            raise ValueError("El archivo tests.txt no existe.")
 
         # Crear y escribir en el archivo de texto
         with open(nombre_archivo, "w") as archivo:
