@@ -36,6 +36,13 @@ def insert_concatenation(expression): #Función insert_concatenation para poder 
                 i += 1
                 token = expression[i]
             result.append(number)
+        elif token.isalpha():
+            alpha = token
+            while i+1 < len(expression) and expression[i+1].isalpha():
+                alpha += expression[i+1]
+                i += 1
+                token = expression[i]
+            result.append(alpha)
         else:   
             result.append(token) #Se agrega caracter por caracter al arreglo.
         if i + 1 < len(expression): #Si la expresión es menor que la cantidad de elementos en el arreglo, se coloca en la posición i + 1.
@@ -370,19 +377,28 @@ def leer_archivo_yalex():
             yalexRegex3.append(element)
 
     yalexRegex2 = yalexRegex3
-    #print("Regex de parte de los tokens: ", yalexRegex3)
 
     yalexRegex4 = getFinalRegex(yalexRegex2, dict(yalexFunctions2))
     return yalexRegex4, regexIdentifiers, yalexTokens
 
 def getFinalRegex(yalexRegex, yalexFunctions):
-            yalexRegex4 = []
-            for el in yalexRegex:
-                if el in yalexFunctions:
-                    yalexRegex4.extend(getFinalRegex(yalexFunctions[el], yalexFunctions))
+    yalexRegex4 = []
+    for el in yalexRegex:
+        if el in yalexFunctions:
+            yalexRegex4.extend(getFinalRegex(yalexFunctions[el], yalexFunctions))
+        else:
+            # Si el elemento es una cadena que contiene solo un punto, añadirlo como un elemento individual
+            if isinstance(el, str) and len(el) == 1 and el == '.':
+                yalexRegex4.append(el)
+            else:
+                # Si el elemento contiene puntos, dividirlo en tokens individuales
+                if '.' in str(el):
+                    tokens = str(el).split('.')
+                    yalexRegex4.extend(tokens)
                 else:
                     yalexRegex4.append(el)
-            return yalexRegex4
+    return yalexRegex4
+
 
 #Algoritmo de Construcción Directa para convertir una regex en un AFD.
 
@@ -767,9 +783,10 @@ def epsilon_closure(dfaDirect, states):
     #Retornar el cierre épsilon
     return closure
 
-def check_membership(dfaDirect, filename):
+def check_membership(dfaDirect, filename, tokenSymbolList):
     # Inicializar estados actuales con el cierre épsilon del estado inicial
     current_states = epsilon_closure(dfaDirect, {dfaDirect.graph['start']})
+    inputScanner = [[], []]
     print("Inicia simulación de entradas: \n")
     
     # Listas para almacenar las líneas que pertenecen y no pertenecen a la expresión regular
@@ -812,8 +829,30 @@ def check_membership(dfaDirect, filename):
             # Agregar la línea a la lista correspondiente
             if pertenece_linea:
                 pertenece.append(line)
+                # Verificar en tokenSymbolList en qué token pertenece cada elemento de la línea
+                for element in line:
+                    if element == "\n":
+                        continue
+                    for token, elements in tokenSymbolList:
+                        if element in elements:
+                            # Añadir el token al inputScanner
+                            inputScanner[0].append(token)
+                            if element == "\t" or element == " ":
+                                inputScanner[1].append(element)
+                            else:
+                                inputScanner[1].append(element)
+                            break
             else:
                 no_pertenece.append(line)
+                # Agregar " " a inputScanner[0] y el elemento a inputScanner[1]
+                for element in line:
+                    if element == "\n":
+                        continue
+                    inputScanner[0].append("")
+                    if element == "\t" or element == " ":
+                        inputScanner[1].append(element)
+                    else:
+                        inputScanner[1].append(element)
         
         # Imprimir las líneas que pertenecen a la expresión regular
         if pertenece:
@@ -830,6 +869,10 @@ def check_membership(dfaDirect, filename):
                 print(line)
         else:
             print("Todas las líneas pertenecen a la expresión regular definida.")
+        
+        print("Este es inputScanner: ", inputScanner)
+    
+    return inputScanner
 
 def encontrar_nodo_posicion_mas_grande(raiz):
     if raiz is None:
@@ -866,12 +909,44 @@ def remove_unreachable_states(dfa):
     dfa.remove_nodes_from(unreachable_states)
 
 if __name__ == "__main__":
-    #try:
+    try:
         regexList, regexIdentifiers, regexTokens = leer_archivo_yalex()
 
-        #print("Nuestra expresión regular es la siguiente: ", regexList, "\n")
-        #print("Estas son los tokens o identificadores de nuestra expresión regular: ", regexIdentifiers, "\n")
-        #print("Estos son los tokens a ejecutar: ", regexTokens, "\n")
+        # Iteramos sobre los identificadores y los dividimos si contienen un punto
+        for i, identifier in enumerate(regexIdentifiers):
+            if '.' in identifier:
+                parts = identifier.split('.')
+                # Convertimos cada parte a su carácter ASCII si es un número
+                for j, part in enumerate(parts):
+                    if part.isdigit():
+                        parts[j] = chr(int(part))
+                # Reconstruimos el identificador
+                regexIdentifiers[i] = ''.join(parts)
+
+        print("Nuestra expresión regular es la siguiente: ", regexList, "\n")
+        print("Estas son los tokens o identificadores de nuestra expresión regular: ", regexIdentifiers, "\n")
+        print("Estos son los tokens a ejecutar: ", regexTokens, "\n")
+
+        alphaList = []
+        sublist = []
+        last_index = 0
+
+        for token in regexIdentifiers:
+            if token.isdigit():
+                token = chr(int(token))
+                sublist = [token, []]
+            else:
+                sublist = [token, []]
+            for i in range(last_index, len(regexList)):
+                elemento = regexList[i]
+                if elemento != '#' and elemento not in ['+', '|', '*', '(', ')', '.', '?']:
+                    sublist[1].append(chr(int(elemento)))
+                elif elemento == '#':
+                    last_index = i+1
+                    break
+            alphaList.append(sublist)
+
+        print(alphaList)
 
         regexTokensFinal = []
 
@@ -957,7 +1032,7 @@ if __name__ == "__main__":
         plt.show()
 
         # Nombre del archivo de salida
-        nombre_archivo = "AFD1.txt"
+        nombre_archivo = "AFD.txt"
         #Nombre del archivo de pruebas
         testFile = "tests.txt"
 
@@ -969,10 +1044,12 @@ if __name__ == "__main__":
             archivo.write("ACEPTACION =" + str(estados_aceptacion) + "\n")
             archivo.write("TRANSICIONES =" + str(filtered_edges))
 
-        result = check_membership(afdDirect, testFile)
+        inputScanner = check_membership(afdDirect, testFile, alphaList)
         
-        scannerFile = scan.createScanner(regexTokensFinal)
+        scan.createScanner(regexTokensFinal)
 
-    #except Exception as e:
-        #print("Error: ", str(e))
-        #sys.exit(1)
+        scanner.outputScanner(inputScanner)
+
+    except Exception as e:
+        print("Error: ", str(e))
+        sys.exit(1)

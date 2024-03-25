@@ -1,31 +1,22 @@
 def scan(tokenYal):
     if tokenYal == 'ws':
-        try:
-            return
-        except NameError:
-            return f'Token {tokenYal} no definido en archivo'
+        return tokenYal
     if tokenYal == 'id':
-        try:
-            return ID
-        except NameError:
-            return f'Token {tokenYal} no definido en archivo'
+       return ID
     if tokenYal == '+':
-        try:
-            return PLUS
-        except NameError:
-            return f'Token {tokenYal} no definido en archivo'
+       return PLUS
     if tokenYal == '*':
-        try:
-            return TIMES
-        except NameError:
-            return f'Token {tokenYal} no definido en archivo'
+       return TIMES
     if tokenYal == '(':
-        try:
-            return LPAREN
-        except NameError:
-            return f'Token {tokenYal} no definido en archivo'
+       return LPAREN
     if tokenYal == ')':
-        try:
-            return RPAREN
-        except NameError:
-            return f'Token {tokenYal} no definido en archivo'
+       return RPAREN
+    return tokenYal
+
+def outputScanner(scannerList):
+    for token, element in zip(scannerList[0], scannerList[1]):
+        if token == '':
+            print(f'Simbolo {element} -> Token no definido')
+        else:
+            scanSymbol = scan(token)
+            print(f'Simbolo {element} -> Token {scanSymbol}')

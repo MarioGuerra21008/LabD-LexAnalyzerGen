@@ -14,12 +14,18 @@ def createScanner(regexTokens):
             token = regexTokens[i]
             code = regexTokens[i+1]
             file.write(f"    if tokenYal == '{token}':\n")
-            file.write("        try:\n")
             if code == ' ':  # Verificar si el código consiste únicamente en espacios en blanco
-                file.write("            return\n")
+                file.write("        return tokenYal\n")
             else:
-                file.write(f"            {code}\n")
-            file.write("        except NameError:\n")
-            file.write("            return f'Token {tokenYal} no definido en archivo'\n")
+                file.write(f"       {code}\n")
             i += 2
-        file.close
+        file.write("    return tokenYal\n")
+        file.write("\n")
+        file.write("def outputScanner(scannerList):\n")
+        file.write("    for token, element in zip(scannerList[0], scannerList[1]):\n")
+        file.write("        if token == '':\n")
+        file.write("            print(f'Simbolo {element} -> Token no definido')\n")
+        file.write("        else:\n")
+        file.write("            scanSymbol = scan(token)\n")
+        file.write("            print(f'Simbolo {element} -> Token {scanSymbol}')\n")
+        file.close()
