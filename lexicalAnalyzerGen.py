@@ -830,18 +830,37 @@ def check_membership(dfaDirect, filename, tokenSymbolList):
             if pertenece_linea:
                 pertenece.append(line)
                 # Verificar en tokenSymbolList en qué token pertenece cada elemento de la línea
-                for element in line:
-                    if element == "\n":
-                        continue
-                    for token, elements in tokenSymbolList:
-                        if element in elements:
-                            # Añadir el token al inputScanner
-                            inputScanner[0].append(token)
-                            if element == "\t" or element == " ":
-                                inputScanner[1].append(element)
-                            else:
-                                inputScanner[1].append(element)
+                if line[0].isdigit():  # Si el primer elemento es un dígito
+                    number_token_index = None
+                    for token_index, (token, elements) in enumerate(tokenSymbolList):
+                        if "number" in token:
+                            number_token_index = token_index
                             break
+                    if number_token_index is not None:
+                        inputScanner[0].append(tokenSymbolList[number_token_index][0])  # Añadir token "number"
+                        inputScanner[1].append(line[0])  # Añadir primer dígito a inputScanner[1]
+                        # Añadir los dígitos restantes al token "number"
+                        for element in line[1:]:
+                            if element == "\n":
+                                continue
+                            inputScanner[0].append(tokenSymbolList[number_token_index][0])
+                            inputScanner[1].append(element)
+                elif len(line) == 2:  # Si la línea tiene solo un elemento
+                    for token, elements in tokenSymbolList:
+                        if line[0] in token:
+                            inputScanner[0].append(line[0])  # Añadir token correspondiente
+                            inputScanner[1].append(line[0])  # Añadir elemento a inputScanner[1]
+                            break
+                else:  # Si la línea no cumple las condiciones anteriores
+                    for element in line:
+                        if element == "\n":
+                            continue
+                        # Buscar el token correspondiente en tokenSymbolList y añadirlo
+                        for token, elements in tokenSymbolList:
+                            if element in elements:
+                                inputScanner[0].append(token)
+                                inputScanner[1].append(element)
+                                break
             else:
                 no_pertenece.append(line)
                 # Agregar " " a inputScanner[0] y el elemento a inputScanner[1]
@@ -853,6 +872,7 @@ def check_membership(dfaDirect, filename, tokenSymbolList):
                         inputScanner[1].append(element)
                     else:
                         inputScanner[1].append(element)
+
         
         # Imprimir las líneas que pertenecen a la expresión regular
         if pertenece:
@@ -1054,7 +1074,10 @@ if __name__ == "__main__":
         
         scan.createScanner(regexTokensFinal)
 
-        scanner.outputScanner(inputScanner)
+        try:
+            scanner.outputScanner(inputScanner)
+        except Exception as e:
+            print(f"Se ha producido un error: {e}")
 
     except Exception as e:
         print("Error: ", str(e))
