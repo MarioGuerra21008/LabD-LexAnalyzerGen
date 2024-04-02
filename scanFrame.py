@@ -23,11 +23,10 @@ def createScanner(regexTokens):
                 file.write("        except NameError:\n")
                 file.write("            print('Valor de retorno no definido.')\n")
             i += 2
-        file.write("    return tokenYal\n")
         file.write("\n")
         file.write("def outputScanner(scannerList):\n")
         file.write("    for token, element in zip(scannerList[0], scannerList[1]):\n")
-        file.write("        if token == '':\n")
+        file.write("        if token == 'undefined':\n")
         file.write("            print(f'Simbolo {element} -> Token no definido')\n")
         file.write("        else:\n")
         file.write("            scanSymbol = scan(token)\n")

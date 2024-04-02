@@ -107,7 +107,7 @@ def shunting_yard(expression): #Función para realizar el algoritmo shunting yar
     return output_queue
 
 def leer_archivo_yalex():
-    with open(yalexArchive1, "r") as yalexArchive:
+    with open(yalexArchive4, "r") as yalexArchive:
         content = yalexArchive.read()
         if not content:
             raise ValueError("El archivo .yal está vacío.")
@@ -787,6 +787,7 @@ def check_membership(dfaDirect, filename, tokenSymbolList):
     # Inicializar estados actuales con el cierre épsilon del estado inicial
     current_states = epsilon_closure(dfaDirect, {dfaDirect.graph['start']})
     inputScanner = [[], []]
+    lineScanner = [[], []]
     print("Inicia simulación de entradas: \n")
     
     # Listas para almacenar las líneas que pertenecen y no pertenecen a la expresión regular
@@ -802,7 +803,7 @@ def check_membership(dfaDirect, filename, tokenSymbolList):
             # Variables para determinar si la línea pertenece o no a la expresión regular
             pertenece_linea = False
             
-            for element in line:
+            for element in line[:-1]:
                 next_states = set()
                 
                 # Recorrer los estados actuales
@@ -826,9 +827,14 @@ def check_membership(dfaDirect, filename, tokenSymbolList):
             
             print("\nInicia siguiente simulación:\n")
             
+            # Verificar si el último estado después de procesar toda la línea pertenece a un estado de aceptación
+            if pertenece_linea and any(state in dfaDirect.graph['accept'] for state in current_states):
+                pertenece.append(line)
+            else:
+                no_pertenece.append(line)
+
             # Agregar la línea a la lista correspondiente
             if pertenece_linea:
-                pertenece.append(line)
                 # Verificar en tokenSymbolList en qué token pertenece cada elemento de la línea
                 if line[0].isdigit():  # Si el primer elemento es un dígito
                     number_token_index = None
@@ -862,18 +868,19 @@ def check_membership(dfaDirect, filename, tokenSymbolList):
                                 inputScanner[1].append(element)
                                 break
             else:
-                no_pertenece.append(line)
-                # Agregar " " a inputScanner[0] y el elemento a inputScanner[1]
+                # Agregar "" a inputScanner[0] y el elemento a inputScanner[1]
                 for element in line:
                     if element == "\n":
                         continue
-                    inputScanner[0].append("")
+                    inputScanner[0].append("undefined")
                     if element == "\t" or element == " ":
                         inputScanner[1].append(element)
                     else:
                         inputScanner[1].append(element)
+            
+            inputScanner[0].append("Siguiente Token")
+            inputScanner[1].append("Siguiente elemento")
 
-        
         # Imprimir las líneas que pertenecen a la expresión regular
         if pertenece:
             print("Las siguientes líneas pertenecen a la expresión regular definida:")
@@ -889,8 +896,45 @@ def check_membership(dfaDirect, filename, tokenSymbolList):
                 print(line)
         else:
             print("Todas las líneas pertenecen a la expresión regular definida.")
+        
+        current_token = None
+        current_line = []
+        for token, element in zip(inputScanner[0], inputScanner[1]):
+            if token:
+                if current_token is None:
+                    current_token = token
+                    current_line.append(element)
+                elif current_token == token:
+                    current_line.append(element)
+                else:
+                    lineScanner[0].append(current_token)
+                    lineScanner[1].append(''.join(current_line))
+                    current_token = token
+                    current_line = [element]
+            else:
+                if current_token is not None:
+                    lineScanner[0].append(current_token)
+                    lineScanner[1].append(''.join(current_line))
+                    current_token = None
+                    current_line = []
+                else:
+                    # Agregar el elemento como es cuando el token es una cadena vacía
+                    lineScanner[0].append(token)
+                    lineScanner[1].append(element)
+
+        # Agregar el último token y la línea
+        if current_token is not None:
+            lineScanner[0].append(current_token)
+            lineScanner[1].append(''.join(current_line))
+
+        finalLineScanner = [[], []]
+
+        for token, line in zip(lineScanner[0], lineScanner[1]):
+            if token != "Siguiente Token" or line != "Siguiente elemento":
+                finalLineScanner[0].append(token)
+                finalLineScanner[1].append(line)
     
-    return inputScanner
+    return finalLineScanner
 
 def encontrar_nodo_posicion_mas_grande(raiz):
     if raiz is None:
