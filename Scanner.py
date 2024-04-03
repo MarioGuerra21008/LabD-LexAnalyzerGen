@@ -8,49 +8,14 @@ def scan(tokenYal):
            return ID
         except NameError:
             print('Valor de retorno no definido.')
-    if tokenYal == 'number':
-        try:
-           return NUMBER
-        except NameError:
-            print('Valor de retorno no definido.')
-    if tokenYal == ';':
-        try:
-           return SEMICOLON
-        except NameError:
-            print('Valor de retorno no definido.')
-    if tokenYal == ':=':
-        try:
-           return ASSIGNOP
-        except NameError:
-            print('Valor de retorno no definido.')
-    if tokenYal == '<':
-        try:
-           return LT
-        except NameError:
-            print('Valor de retorno no definido.')
-    if tokenYal == '=':
-        try:
-           return EQ
-        except NameError:
-            print('Valor de retorno no definido.')
     if tokenYal == '+':
         try:
            return PLUS
         except NameError:
             print('Valor de retorno no definido.')
-    if tokenYal == '-':
-        try:
-           return MINUS
-        except NameError:
-            print('Valor de retorno no definido.')
     if tokenYal == '*':
         try:
            return TIMES
-        except NameError:
-            print('Valor de retorno no definido.')
-    if tokenYal == '/':
-        try:
-           return DIV
         except NameError:
             print('Valor de retorno no definido.')
     if tokenYal == '(':

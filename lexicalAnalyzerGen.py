@@ -107,7 +107,7 @@ def shunting_yard(expression): #Función para realizar el algoritmo shunting yar
     return output_queue
 
 def leer_archivo_yalex():
-    with open(yalexArchive4, "r") as yalexArchive:
+    with open(yalexArchive1, "r") as yalexArchive:
         content = yalexArchive.read()
         if not content:
             raise ValueError("El archivo .yal está vacío.")
@@ -848,19 +848,24 @@ def check_membership(dfaDirect, filename, tokenSymbolList):
                         # Añadir los dígitos restantes al token "number"
                         for element in line[1:]:
                             if element == "\n":
-                                continue
-                            inputScanner[0].append(tokenSymbolList[number_token_index][0])
-                            inputScanner[1].append(element)
+                                for token, elements in tokenSymbolList:
+                                    if element in elements:
+                                        inputScanner[0].append(token)
+                                        inputScanner[1].append(element)
+                            else:
+                                inputScanner[0].append(tokenSymbolList[number_token_index][0])
+                                inputScanner[1].append(element)
                 elif len(line) == 2:  # Si la línea tiene solo un elemento
                     for token, elements in tokenSymbolList:
-                        if line[0] in token:
-                            inputScanner[0].append(line[0])  # Añadir token correspondiente
+                        if line[0] == token:
+                            inputScanner[0].append(token)  # Añadir token correspondiente
                             inputScanner[1].append(line[0])  # Añadir elemento a inputScanner[1]
-                            break
+                    for token, elements in tokenSymbolList:
+                        if line[1] in elements:
+                            inputScanner[0].append(token)  # Añadir token correspondiente
+                            inputScanner[1].append(line[1])  # Añadir elemento a inputScanner[1]
                 else:  # Si la línea no cumple las condiciones anteriores
                     for element in line:
-                        if element == "\n":
-                            continue
                         # Buscar el token correspondiente en tokenSymbolList y añadirlo
                         for token, elements in tokenSymbolList:
                             if element in elements:
@@ -870,16 +875,41 @@ def check_membership(dfaDirect, filename, tokenSymbolList):
             else:
                 # Agregar "" a inputScanner[0] y el elemento a inputScanner[1]
                 for element in line:
-                    if element == "\n":
-                        continue
-                    inputScanner[0].append("undefined")
-                    if element == "\t" or element == " ":
-                        inputScanner[1].append(element)
+                    if element == "\t" or element == "\n" or element == " ":
+                        for token, elements in tokenSymbolList:
+                            if element in elements:
+                                inputScanner[0].append(token)
+                                inputScanner[1].append(element)
+                                break
+                    elif not element.isdigit():
+                        found = False
+                        for token, elements in tokenSymbolList:
+                            if element in elements:
+                                inputScanner[0].append(token)  # Añadir token correspondiente
+                                inputScanner[1].append(element)  # Añadir elemento a inputScanner[1]
+                                found = True
+                                break
+                        if not found: # Si no se encontró en ningún token, considerarlo como indefinido
+                            inputScanner[0].append("undefined")
+                            inputScanner[1].append(element)
+                    elif element.isdigit():
+                        number_token_index = None
+                        for token_index, (token, elements) in enumerate(tokenSymbolList):
+                            if "number" in token:
+                                number_token_index = token_index
+                                break
+                        if number_token_index is not None:
+                            inputScanner[0].append(tokenSymbolList[number_token_index][0])  # Añadir token "number"
+                            inputScanner[1].append(element)  # Añadir primer dígito a inputScanner[1]
+                        else:
+                            inputScanner[0].append("undefined")
+                            inputScanner[1].append(element)
                     else:
+                        inputScanner[0].append("undefined")
                         inputScanner[1].append(element)
             
-            inputScanner[0].append("Siguiente Token")
-            inputScanner[1].append("Siguiente elemento")
+            inputScanner[0].append("")
+            inputScanner[1].append("")
 
         # Imprimir las líneas que pertenecen a la expresión regular
         if pertenece:
@@ -900,7 +930,10 @@ def check_membership(dfaDirect, filename, tokenSymbolList):
         current_token = None
         current_line = []
         for token, element in zip(inputScanner[0], inputScanner[1]):
-            if token:
+            if token == 'undefined':
+                lineScanner[0].append(token)
+                lineScanner[1].append(element)
+            if token != 'undefined':
                 if current_token is None:
                     current_token = token
                     current_line.append(element)
@@ -911,16 +944,6 @@ def check_membership(dfaDirect, filename, tokenSymbolList):
                     lineScanner[1].append(''.join(current_line))
                     current_token = token
                     current_line = [element]
-            else:
-                if current_token is not None:
-                    lineScanner[0].append(current_token)
-                    lineScanner[1].append(''.join(current_line))
-                    current_token = None
-                    current_line = []
-                else:
-                    # Agregar el elemento como es cuando el token es una cadena vacía
-                    lineScanner[0].append(token)
-                    lineScanner[1].append(element)
 
         # Agregar el último token y la línea
         if current_token is not None:
@@ -930,9 +953,14 @@ def check_membership(dfaDirect, filename, tokenSymbolList):
         finalLineScanner = [[], []]
 
         for token, line in zip(lineScanner[0], lineScanner[1]):
-            if token != "Siguiente Token" or line != "Siguiente elemento":
+            if token != "" or line != "":
                 finalLineScanner[0].append(token)
                 finalLineScanner[1].append(line)
+    
+    print("Esto es inputScanner[0]: ", inputScanner[0],"\n")
+    print("Esto es inputScanner[1]: ", inputScanner[1],"\n")
+    print("Esto es lineScanner[0]: ", lineScanner[0],"\n")
+    print("Esto es lineScanner[1]: ", lineScanner[1],"\n")
     
     return finalLineScanner
 
