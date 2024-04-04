@@ -107,7 +107,7 @@ def shunting_yard(expression): #Función para realizar el algoritmo shunting yar
     return output_queue
 
 def leer_archivo_yalex():
-    with open(yalexArchive1, "r") as yalexArchive:
+    with open(yalexArchive4, "r") as yalexArchive:
         content = yalexArchive.read()
         if not content:
             raise ValueError("El archivo .yal está vacío.")
@@ -913,19 +913,19 @@ def check_membership(dfaDirect, filename, tokenSymbolList):
 
         # Imprimir las líneas que pertenecen a la expresión regular
         if pertenece:
-            print("Las siguientes líneas pertenecen a la expresión regular definida:")
+            print("Las siguientes líneas pertenecen a la expresión regular definida:\n")
             for line in pertenece:
                 print(line)
         else:
-            print("No se encontraron líneas que pertenezcan a la expresión regular definida.")
+            print("No se encontraron líneas que pertenezcan a la expresión regular definida.\n")
         
         # Imprimir las líneas que no pertenecen a la expresión regular
         if no_pertenece:
-            print("\nLas siguientes líneas no pertenecen a la expresión regular definida:")
+            print("\nLas siguientes líneas no pertenecen a la expresión regular definida:\n")
             for line in no_pertenece:
                 print(line)
         else:
-            print("Todas las líneas pertenecen a la expresión regular definida.")
+            print("Todas las líneas pertenecen a la expresión regular definida.\n")
         
         current_token = None
         current_line = []
@@ -956,11 +956,6 @@ def check_membership(dfaDirect, filename, tokenSymbolList):
             if token != "" or line != "":
                 finalLineScanner[0].append(token)
                 finalLineScanner[1].append(line)
-    
-    print("Esto es inputScanner[0]: ", inputScanner[0],"\n")
-    print("Esto es inputScanner[1]: ", inputScanner[1],"\n")
-    print("Esto es lineScanner[0]: ", lineScanner[0],"\n")
-    print("Esto es lineScanner[1]: ", lineScanner[1],"\n")
     
     return finalLineScanner
 

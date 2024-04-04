@@ -23,6 +23,7 @@ def createScanner(regexTokens):
                 file.write("        except NameError:\n")
                 file.write("            print('Valor de retorno no definido.')\n")
             i += 2
+        file.write(f"    return tokenYal\n")
         file.write("\n")
         file.write("def outputScanner(scannerList):\n")
         file.write("    for token, element in zip(scannerList[0], scannerList[1]):\n")
